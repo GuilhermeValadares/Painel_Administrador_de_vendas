@@ -52,4 +52,11 @@ Os testes cobrem o importador e as regras de valor, data e pagamento (`src/lib/*
 
 ## Deploy na Vercel
 
-Configure as variáveis (incluindo `APP_URL`, com o endereço do site) do `.env.example` no projeto da Vercel. O `postinstall` gera o Prisma Client no build.
+1. Importe o repositório em vercel.com/new e, antes de tocar em **Deploy**, preencha as variáveis de ambiente:
+   - `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `DATABASE_URL` (a do pooler, porta 6543)
+   - `APP_URL` é opcional: sem ela, o link de "Esqueci a senha" usa o endereço de produção da Vercel. Preencha só se usar domínio próprio.
+   `DIRECT_URL` não é necessária lá: serve só para rodar migrações no seu computador.
+2. No Supabase, em Authentication > URL Configuration, coloque o endereço do site em Site URL e em Redirect URLs.
+
+O `postinstall` gera o Prisma Client no build. O `vercel.json` fixa a região em São Francisco (sfo1), perto do banco no Supabase (us-west-2).

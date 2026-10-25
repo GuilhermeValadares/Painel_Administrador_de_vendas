@@ -67,7 +67,7 @@ export async function marcarPago(vendaId: string, pagamento: unknown): Promise<R
   return {};
 }
 
-const TAMANHO_MAXIMO = 5 * 1024 * 1024;
+const TAMANHO_MAXIMO = 3.5 * 1024 * 1024; // abaixo do limite de 4 MB do pedido (next.config.ts)
 const MAX_LINHAS = 5000;
 const MAX_COLUNAS = 30;
 
@@ -87,7 +87,7 @@ export async function lerPlanilha(form: FormData): Promise<ResultadoImportacao |
   const arquivo = form.get("planilha");
   if (!(arquivo instanceof File) || !arquivo.name.toLowerCase().endsWith(".xlsx"))
     return { erro: "Escolha um arquivo do Excel (que termina em .xlsx)" };
-  if (arquivo.size > TAMANHO_MAXIMO) return { erro: "Esse arquivo é grande demais (máximo 5 MB)" };
+  if (arquivo.size > TAMANHO_MAXIMO) return { erro: "Esse arquivo é grande demais (máximo 3 MB)" };
 
   const livro = new ExcelJS.Workbook();
   try {

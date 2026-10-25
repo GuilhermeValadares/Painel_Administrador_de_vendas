@@ -3,6 +3,9 @@
 import { redirect } from "next/navigation";
 import { supabaseServidor } from "@/lib/supabase/server";
 
+// APP_URL manda; na Vercel, sem ela, usa o endereço de produção do projeto.
+const siteUrl = () => process.env.APP_URL ?? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+
 export async function entrar(_: string | null, form: FormData) {
   const email = String(form.get("email") ?? "").trim();
   const senha = String(form.get("senha") ?? "");
@@ -16,7 +19,7 @@ export async function esqueciSenha(_: string | null, form: FormData) {
   const email = String(form.get("email") ?? "").trim();
   if (!email) return "Escreva o seu e-mail acima e toque de novo em “Esqueci a senha”";
   await (await supabaseServidor()).auth.resetPasswordForEmail(email, {
-    redirectTo: new URL("/auth/confirm?next=/nova-senha", process.env.APP_URL).toString(),
+    redirectTo: new URL("/auth/confirm?next=/nova-senha", siteUrl()).toString(),
   });
   // Mesma resposta exista ou não a conta, para não revelar quais e-mails estão cadastrados.
   return "Pronto! Se o e-mail estiver certo, chega um link para criar uma senha nova.";
