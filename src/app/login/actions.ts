@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServidor } from "@/lib/supabase/server";
 
@@ -16,9 +15,8 @@ export async function entrar(_: string | null, form: FormData) {
 export async function esqueciSenha(_: string | null, form: FormData) {
   const email = String(form.get("email") ?? "").trim();
   if (!email) return "Escreva o seu e-mail acima e toque de novo em “Esqueci a senha”";
-  const origem = (await headers()).get("origin");
   await (await supabaseServidor()).auth.resetPasswordForEmail(email, {
-    redirectTo: `${origem}/auth/confirm?next=/nova-senha`,
+    redirectTo: new URL("/auth/confirm?next=/nova-senha", process.env.APP_URL).toString(),
   });
   // Mesma resposta exista ou não a conta, para não revelar quais e-mails estão cadastrados.
   return "Pronto! Se o e-mail estiver certo, chega um link para criar uma senha nova.";

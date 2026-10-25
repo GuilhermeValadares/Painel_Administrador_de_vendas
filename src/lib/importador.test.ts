@@ -144,4 +144,5 @@ describe("importar", () => {
     const r = rodar(linha(base), linha({ ...base, data: "4/8", pag: "credito 3x visa", entrega: "correios", rastreio: "aa123456789br" }));
     for (const v of r.vendas) expect(vendaSchema.safeParse(v.venda).success).toBe(true);
   });
+
 });

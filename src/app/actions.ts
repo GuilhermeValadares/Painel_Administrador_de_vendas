@@ -68,6 +68,8 @@ export async function marcarPago(vendaId: string, pagamento: unknown): Promise<R
 }
 
 const TAMANHO_MAXIMO = 5 * 1024 * 1024;
+const MAX_LINHAS = 5000;
+const MAX_COLUNAS = 30;
 
 function texto(v: ExcelJS.CellValue): string {
   if (v === null || v === undefined) return "";
@@ -95,6 +97,8 @@ export async function lerPlanilha(form: FormData): Promise<ResultadoImportacao |
   }
   const aba = livro.worksheets[0];
   if (!aba) return { erro: "A planilha está vazia" };
+  if (aba.rowCount > MAX_LINHAS || aba.columnCount > MAX_COLUNAS)
+    return { erro: `A planilha é grande demais (máximo ${MAX_LINHAS} linhas e ${MAX_COLUNAS} colunas)` };
   const linhas: string[][] = [];
   for (let l = 1; l <= aba.rowCount; l++) {
     const row = aba.getRow(l);

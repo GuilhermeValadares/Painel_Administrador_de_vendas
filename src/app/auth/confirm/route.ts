@@ -5,7 +5,8 @@ import { supabaseServidor } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const next = request.nextUrl.searchParams.get("next");
-  const destino = next?.startsWith("/") && !next.startsWith("//") ? next : "/";
+  // Só destinos fixos: qualquer outro valor (ex.: "/\site.com") volta para o início.
+  const destino = next === "/nova-senha" ? next : "/";
   if (code) {
     const { error } = await (await supabaseServidor()).auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(new URL(destino, request.url));

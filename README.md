@@ -10,7 +10,7 @@ Stack: Next.js 16 (App Router), React 19, TypeScript, Prisma 7, Supabase (Postgr
 2. **Desligue o cadastro público:** Authentication > Sign In / Providers > desmarque "Allow new users to sign up".
 3. **Crie a conta da Maria:** Authentication > Users > Add user (e-mail e senha).
 4. **Ajuste as URLs:** em Authentication > URL Configuration, coloque a URL do site (ex.: `http://localhost:3000` ou a da Vercel) em Site URL e em Redirect URLs. O link de "Esqueci a senha" precisa disso.
-5. **Configure as variáveis:**
+5. **Configure as variáveis** (`APP_URL` é o endereço do site, usado no link de "Esqueci a senha"):
    ```bash
    cp .env.example .env.local   # e preencha com os dados do Supabase
    ```
@@ -52,4 +52,4 @@ Os testes cobrem o importador e as regras de valor, data e pagamento (`src/lib/*
 
 ## Deploy na Vercel
 
-Configure as quatro variáveis do `.env.example` no projeto da Vercel. O `postinstall` gera o Prisma Client no build.
+Configure as variáveis (incluindo `APP_URL`, com o endereço do site) do `.env.example` no projeto da Vercel. O `postinstall` gera o Prisma Client no build.

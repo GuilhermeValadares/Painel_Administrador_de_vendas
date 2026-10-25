@@ -254,8 +254,3 @@ export function importar(linhas: string[][], hojeISO: string): ResultadoImportac
 
   return resultado;
 }
-
-/** Sugestão usada por "Está certo": vale só se passar na mesma validação do formulário. */
-export function sugestaoValida(item: ItemImportado) {
-  return vendaSchema.safeParse(item.venda).success;
-}

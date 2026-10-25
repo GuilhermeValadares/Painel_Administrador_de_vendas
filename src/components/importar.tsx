@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Check, FileSpreadsheet, Pencil, Upload, X } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, Pencil, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { lerPlanilha, salvarImportacao } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { type ItemImportado, type ResultadoImportacao, sugestaoValida } from "@/lib/importador";
-import { dataBR, NOME_PAGAMENTO, reais } from "@/lib/venda";
+import { type ItemImportado, type ResultadoImportacao } from "@/lib/importador";
 import { FormVenda, type Sugestoes } from "./form-venda";
 
 type Conferir = ItemImportado & { estado: "pendente" | "ok" | "fora" };
@@ -121,14 +120,9 @@ export function Importar({ aberto, fechar, sugestoes }: { aberto: boolean; fecha
                   <Original item={c} />
                   {c.estado === "pendente" ? (
                     <>
-                      <ul className="mt-2 list-disc pl-6 text-base font-medium text-orange-800">
-                        {c.motivos.map((m) => <li key={m}>{m}</li>)}
-                      </ul>
-                      <Resumo item={c} />
+                      <p className="mt-2 text-base font-medium text-orange-800">Existe um ou mais erros nesta venda.</p>
+                      <p className="text-base">Sugestão: corrija.</p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {sugestaoValida(c) && (
-                          <Button onClick={() => mudarItem(i, { estado: "ok" })}><Check /> Está certo</Button>
-                        )}
                         <Button variant="outline" onClick={() => setCorrigindo(i)}><Pencil /> Corrigir</Button>
                         <Button variant="ghost" onClick={() => mudarItem(i, { estado: "fora" })}><X /> Não trazer</Button>
                       </div>
@@ -166,12 +160,3 @@ function Original({ item }: { item: ItemImportado }) {
   );
 }
 
-function Resumo({ item: { venda: v } }: { item: ItemImportado }) {
-  return (
-    <p className="mt-2 text-base">
-      Sugestão: {v.data ? dataBR(v.data) : "sem data"} · {v.produto || "sem produto"}
-      {v.cliente ? ` · ${v.cliente}` : ""} · {v.valorCentavos ? reais(v.valorCentavos) : "sem valor"}
-      {v.pagamento ? ` · ${NOME_PAGAMENTO[v.pagamento]}` : ""}
-    </p>
-  );
-}

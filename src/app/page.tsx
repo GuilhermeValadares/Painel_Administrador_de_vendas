@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Painel, type VendaLinha } from "@/components/painel";
 import type { Prisma } from "@/generated/prisma/client";
@@ -17,6 +18,7 @@ const dia = (iso: string) => new Date(iso + "T00:00:00Z");
 const BUSCA = ["produto", "cliente", "observacao", "rastreio"] as const;
 
 async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
+  await connection(); // a sessão e a data de hoje só existem no momento do pedido
   const dono = await donoId();
   const p = await searchParams;
   const q = typeof p.q === "string" ? p.q.trim().slice(0, 100) : "";
