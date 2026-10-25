@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Pagamento {
+  PIX
+  DINHEIRO
+  DEBITO
+  CREDITO
+  PENDENTE
+}
+
+enum Cartao {
+  VISA
+  MASTER
+  ELO
+  OUTRO
+}
+
+enum Entrega {
+  NA_HORA
+  BUSCOU
+  CORREIOS
+  MOTOBOY
+}
+
+enum Tipo {
+  VENDA
+  DEVOLUCAO
+}
+
+enum Origem {
+  DIGITADA
+  IMPORTADA
+}
+
+model Venda {
+  id            String     @id @default(uuid()) @db.Uuid
+  donoId        String     @map("dono_id") @db.Uuid
+  data          DateTime   @db.Date
+  produto       String
+  cliente       String?
+  valorCentavos Int        @map("valor_centavos")
+  pagamento     Pagamento
+  cartao        Cartao?
+  parcelas      Int?
+  entrega       Entrega
+  rastreio      String?
+  observacao    String?
+  tipo          Tipo       @default(VENDA)
+  origem        Origem     @default(DIGITADA)
+  textoOriginal String?    @map("texto_original")
+  criadaEm      DateTime   @default(now()) @map("criada_em")
+  alteradaEm    DateTime   @updatedAt @map("alterada_em")
+  apagadaEm     DateTime?  @map("apagada_em")
+
+  @@index([donoId, data])
+  @@map("vendas")
+}

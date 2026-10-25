@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vendas da Maria
 
-## Getting Started
+Painel web para a Maria anotar, achar e corrigir as vendas da loja, trazer a planilha antiga e baixar tudo de volta em Excel. Construído a partir do [PRD 001](PRDs/001-Gerenciador-de-vendas.md).
 
-First, run the development server:
+Stack: Next.js 16 (App Router), React 19, TypeScript, Prisma 7, Supabase (PostgreSQL e Auth), Zod, Tailwind CSS 4, shadcn/ui, ExcelJS e Vitest.
+
+## Como rodar
+
+1. **Crie um projeto no Supabase.**
+2. **Desligue o cadastro público:** Authentication > Sign In / Providers > desmarque "Allow new users to sign up".
+3. **Crie a conta da Maria:** Authentication > Users > Add user (e-mail e senha).
+4. **Ajuste as URLs:** em Authentication > URL Configuration, coloque a URL do site (ex.: `http://localhost:3000` ou a da Vercel) em Site URL e em Redirect URLs. O link de "Esqueci a senha" precisa disso.
+5. **Configure as variáveis:**
+   ```bash
+   cp .env.example .env.local   # e preencha com os dados do Supabase
+   ```
+6. **Instale e crie a tabela:**
+   ```bash
+   npm install
+   npm run db:migrate           # cria a tabela "vendas" e liga o RLS
+   npm run dev
+   ```
+
+Use `prisma migrate deploy` (o `npm run db:migrate`) e não `migrate dev`: a migração cita `auth.uid()`, que não existe no banco-sombra usado pelo `migrate dev`.
+
+## Testes
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm test
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Os testes cobrem o importador e as regras de valor, data e pagamento (`src/lib/*.test.ts`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Onde está cada coisa
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Arquivo | O que faz |
+| --- | --- |
+| `src/lib/venda.ts` | Campos da venda, validação (Zod) com mensagens em português, dinheiro em centavos |
+| `src/lib/importador.ts` | Função pura que lê as linhas da planilha e separa em vendas, "Para conferir" e compras de estoque |
+| `src/app/actions.ts` | Ações do servidor: salvar, apagar/desfazer, "Já pagou", ler e salvar a importação |
+| `src/app/planilha/route.ts` | "Baixar planilha" (.xlsx) |
+| `src/app/page.tsx` | Painel: resumo, busca, atalhos e lista |
+| `src/components/` | Telas do painel, formulário da venda e importação |
+| `src/proxy.ts` | Renova a sessão e manda quem não entrou para o login |
+| `prisma/` | Schema e migração (com Row Level Security) |
 
-## Learn More
+## Segurança
 
-To learn more about Next.js, take a look at the following resources:
+- O Prisma conecta direto no PostgreSQL e **não passa pelo RLS**. Por isso toda consulta filtra por `dono_id`, lido da sessão verificada no servidor (`donoId()` em `src/lib/supabase/server.ts`). O RLS fica ligado como segunda barreira.
+- Apagar só marca `apagada_em`, o que permite o "Desfazer".
+- Na importação, o texto original de cada linha fica guardado em `texto_original`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy na Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Configure as quatro variáveis do `.env.example` no projeto da Vercel. O `postinstall` gera o Prisma Client no build.
