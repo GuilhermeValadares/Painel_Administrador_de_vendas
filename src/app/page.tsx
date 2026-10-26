@@ -45,7 +45,7 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
     return grupos.reduce((t, g) => t + (g.tipo === "DEVOLUCAO" ? -1 : 1) * (g._sum.valorCentavos ?? 0), 0);
   };
 
-  const [vendidoHoje, vendidoMes, receber, lista, produtos, clientes] = await Promise.all([
+  const dados = await Promise.all([
     vendido(dia(hojeISO)),
     vendido({ gte: dia(inicioMes), lte: dia(hojeISO) }),
     db.venda.aggregate({ where: { ...base, pagamento: "PENDENTE", tipo: "VENDA" }, _sum: { valorCentavos: true }, _count: true }),
@@ -65,7 +65,9 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
       select: { cliente: true },
       take: 300,
     }),
-  ]);
+  ]).catch(() => null);
+  if (!dados) return <ErroBanco semUrl={!process.env.DATABASE_URL} />;
+  const [vendidoHoje, vendidoMes, receber, lista, produtos, clientes] = dados;
 
   const vendas: VendaLinha[] = lista.map((v) => ({
     id: v.id,
@@ -90,5 +92,19 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
       q={q}
       filtro={filtro}
     />
+  );
+}
+
+// Só chega aqui quem já entrou: explica a falha em vez da tela de erro genérica.
+function ErroBanco({ semUrl }: { semUrl: boolean }) {
+  return (
+    <main className="mx-auto max-w-xl p-8 text-center">
+      <h1 className="text-2xl font-semibold">Não consegui abrir as vendas</h1>
+      <p className="mt-3">
+        {semUrl
+          ? "O site ainda não está ligado ao banco de dados (falta a variável DATABASE_URL na Vercel)."
+          : "O site não conseguiu falar com o banco de dados. Confira a variável DATABASE_URL na Vercel (sem aspas e com a senha certa)."}
+      </p>
+    </main>
   );
 }
