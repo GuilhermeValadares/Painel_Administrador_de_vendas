@@ -36,7 +36,6 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
 
   const where: Prisma.VendaWhereInput = {
     ...base,
-    ...(filtro === "hoje" && { data: dia(hojeISO) }),
     ...(filtro === "semana" && { data: { gte: dia(inicioSemana) } }),
     ...(filtro === "mes" && { data: { gte: dia(inicioMes) } }),
     ...((de || ate) && { data: { ...(de && { gte: dia(de) }), ...(ate && { lte: dia(ate) }) } }),
@@ -54,6 +53,8 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
   const dados = await Promise.all([
     vendido(dia(hojeISO)),
     vendido({ gte: dia(inicioMes), lte: dia(hojeISO) }),
+    vendido({ gte: dia(inicioSemana), lte: dia(hojeISO) }),
+    vendido(undefined),
     db.venda.aggregate({ where: { ...base, pagamento: "PENDENTE", tipo: "VENDA" }, _sum: { valorCentavos: true }, _count: true }),
     // shortcut: mostra as 200 mais recentes; paginar se a lista passar disso com frequência.
     db.venda.findMany({ where, orderBy: [{ data: "desc" }, { criadaEm: "desc" }], take: 200 }),
@@ -73,7 +74,7 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
     }),
   ]).catch(() => null);
   if (!dados) return <ErroBanco semUrl={!process.env.DATABASE_URL} />;
-  const [vendidoHoje, vendidoMes, receber, lista, produtos, clientes] = dados;
+  const [vendidoHoje, vendidoMes, vendidoSemana, vendidoTudo, receber, lista, produtos, clientes] = dados;
 
   const vendas: VendaLinha[] = lista.map((v) => ({
     id: v.id,
@@ -92,7 +93,7 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
 
   return (
     <Painel
-      resumo={{ hoje: vendidoHoje, mes: vendidoMes, receber: receber._sum.valorCentavos ?? 0, qtdReceber: receber._count }}
+      resumo={{ hoje: vendidoHoje, mes: vendidoMes, semana: vendidoSemana, tudo: vendidoTudo, receber: receber._sum.valorCentavos ?? 0, qtdReceber: receber._count }}
       vendas={vendas}
       sugestoes={{ produtos, clientes: clientes.map((c) => c.cliente!) }}
       q={q}

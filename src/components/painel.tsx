@@ -49,10 +49,14 @@ export type VendaLinha = {
   tipo: Tipo;
 };
 
-export type Resumo = { hoje: number; mes: number; receber: number; qtdReceber: number };
+export type Resumo = { hoje: number; mes: number; semana: number; tudo: number; receber: number; qtdReceber: number };
+
+// O cartão do meio acompanha o atalho tocado: tudo, esta semana ou este mês.
+const TITULO_TOTAL = { tudo: "Todas as vendas", semana: "Vendido nesta semana", mes: "Vendido neste mês" } as const;
+type Modo = keyof typeof TITULO_TOTAL;
+const ehModo = (f: string): f is Modo => f in TITULO_TOTAL;
 
 export const FILTROS = [
-  ["hoje", "Hoje"],
   ["semana", "Esta semana"],
   ["mes", "Este mês"],
   ["tudo", "Tudo"],
@@ -84,9 +88,12 @@ export function Painel({
   const [apagando, setApagando] = useState<VendaLinha | null>(null);
   const [pagando, setPagando] = useState<VendaLinha | null>(null);
   const [importando, setImportando] = useState(false);
+  // Outros atalhos (A receber, Falta rastreio) não mexem no cartão: ele fica como estava.
+  const [modo, setModo] = useState<Modo>(ehModo(filtro) ? filtro : "tudo");
+  if (ehModo(filtro) && filtro !== modo) setModo(filtro);
 
-  // Atalhos de data (hoje, semana, mês) e o período escolhido à mão não valem juntos.
-  const porData = (f: string) => f === "hoje" || f === "semana" || f === "mes";
+  // Atalhos de data (semana, mês) e o período escolhido à mão não valem juntos.
+  const porData = (f: string) => f === "semana" || f === "mes";
 
   function endereco(o: { q?: string; f?: string; de?: string; ate?: string }) {
     const p = new URLSearchParams();
@@ -143,7 +150,7 @@ export function Painel({
 
       <section aria-label="Resumo" className="grid gap-3 sm:grid-cols-3">
         <Cartao titulo="Vendido hoje" valor={reais(resumo.hoje)} />
-        <Cartao titulo="Vendido neste mês" valor={reais(resumo.mes)} />
+        <Cartao titulo={TITULO_TOTAL[modo]} valor={reais(resumo[modo])} />
         <Link
           href={link("receber")}
           className="rounded-2xl border-2 border-orange-300 bg-orange-50 p-5 text-orange-900 outline-none hover:bg-orange-100 focus-visible:ring-3 focus-visible:ring-ring/60"
