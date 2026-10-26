@@ -24,6 +24,11 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
   const q = typeof p.q === "string" ? p.q.trim().slice(0, 100) : "";
   const filtro = typeof p.filtro === "string" ? p.filtro : "tudo";
 
+  // Datas do filtro "De / Até": só vale AAAA-MM-DD de verdade; se vier trocado, inverte.
+  const lerDia = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(dia(v).getTime()) && dia(v).toISOString().startsWith(v) ? v : "");
+  let [de, ate] = [lerDia(p.de), lerDia(p.ate)];
+  if (de && ate && de > ate) [de, ate] = [ate, de];
+
   const hojeISO = hoje();
   const inicioMes = hojeISO.slice(0, 8) + "01";
   const inicioSemana = somarDias(hojeISO, -dia(hojeISO).getUTCDay()); // semana começa no domingo
@@ -34,6 +39,7 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
     ...(filtro === "hoje" && { data: dia(hojeISO) }),
     ...(filtro === "semana" && { data: { gte: dia(inicioSemana) } }),
     ...(filtro === "mes" && { data: { gte: dia(inicioMes) } }),
+    ...((de || ate) && { data: { ...(de && { gte: dia(de) }), ...(ate && { lte: dia(ate) }) } }),
     ...(filtro === "receber" && { pagamento: "PENDENTE", tipo: "VENDA" }),
     ...(filtro === "rastreio" && { entrega: "CORREIOS", rastreio: null }),
     ...(q && { OR: BUSCA.map((c) => ({ [c]: { contains: q, mode: "insensitive" } })) }),
@@ -91,6 +97,8 @@ async function Conteudo({ searchParams }: Pick<PageProps<"/">, "searchParams">) 
       sugestoes={{ produtos, clientes: clientes.map((c) => c.cliente!) }}
       q={q}
       filtro={filtro}
+      de={de}
+      ate={ate}
     />
   );
 }

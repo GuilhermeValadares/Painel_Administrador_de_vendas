@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CircleDollarSign, Download, FileUp, LogOut, Package, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { CircleDollarSign, Download, FileUp, LogOut, Package, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { apagarVenda, desfazerApagar, marcarPago, salvarVenda } from "@/app/actions";
 import { sair } from "@/app/login/actions";
@@ -66,12 +66,16 @@ export function Painel({
   sugestoes,
   q,
   filtro,
+  de,
+  ate,
 }: {
   resumo: Resumo;
   vendas: VendaLinha[];
   sugestoes: Sugestoes;
   q: string;
   filtro: string;
+  de: string;
+  ate: string;
 }) {
   const router = useRouter();
   const [buscando, startTransition] = useTransition();
@@ -81,16 +85,28 @@ export function Painel({
   const [pagando, setPagando] = useState<VendaLinha | null>(null);
   const [importando, setImportando] = useState(false);
 
-  function irPara(busca: string, f: string) {
+  // Atalhos de data (hoje, semana, mês) e o período escolhido à mão não valem juntos.
+  const porData = (f: string) => f === "hoje" || f === "semana" || f === "mes";
+
+  function endereco(o: { q?: string; f?: string; de?: string; ate?: string }) {
     const p = new URLSearchParams();
-    if (busca.trim()) p.set("q", busca.trim());
-    if (f !== "tudo") p.set("filtro", f);
-    startTransition(() => router.replace(p.size ? `/?${p}` : "/", { scroll: false }));
+    if (o.q?.trim()) p.set("q", o.q.trim());
+    if (o.f && o.f !== "tudo") p.set("filtro", o.f);
+    if (o.de) p.set("de", o.de);
+    if (o.ate) p.set("ate", o.ate);
+    return p.size ? `/?${p}` : "/";
   }
+
+  const irPara = (url: string) => startTransition(() => router.replace(url, { scroll: false }));
 
   function buscar(texto: string) {
     clearTimeout(espera.current);
-    espera.current = setTimeout(() => irPara(texto, filtro), 300);
+    espera.current = setTimeout(() => irPara(endereco({ q: texto, f: filtro, de, ate })), 300);
+  }
+
+  function escolherPeriodo(novo: { de?: string; ate?: string }) {
+    const periodo = { de, ate, ...novo };
+    irPara(endereco({ q, f: porData(filtro) && (periodo.de || periodo.ate) ? "tudo" : filtro, ...periodo }));
   }
 
   async function confirmarApagar() {
@@ -104,12 +120,7 @@ export function Painel({
     });
   }
 
-  const link = (f: string) => {
-    const p = new URLSearchParams();
-    if (q) p.set("q", q);
-    if (f !== "tudo") p.set("filtro", f);
-    return p.size ? `/?${p}` : "/";
-  };
+  const link = (f: string) => (porData(f) ? endereco({ q, f }) : endereco({ q, f, de, ate }));
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6">
@@ -174,11 +185,26 @@ export function Painel({
             </Link>
           ))}
         </nav>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="de" className="text-base font-medium">De</label>
+            <Input id="de" type="date" value={de} max={ate || undefined} onChange={(e) => escolherPeriodo({ de: e.target.value })} className="w-auto bg-background" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="ate" className="text-base font-medium">Até</label>
+            <Input id="ate" type="date" value={ate} min={de || undefined} onChange={(e) => escolherPeriodo({ ate: e.target.value })} className="w-auto bg-background" />
+          </div>
+          {(de || ate) && (
+            <Button variant="outline" onClick={() => escolherPeriodo({ de: "", ate: "" })}>
+              <X /> Limpar datas
+            </Button>
+          )}
+        </div>
 
         <div aria-live="polite" className={buscando ? "opacity-60 transition-opacity" : undefined}>
           {vendas.length === 0 ? (
             <p className="rounded-2xl border bg-card p-8 text-center text-xl">
-              {q || filtro !== "tudo" ? "Nenhuma venda encontrada." : "Ainda não há vendas. Toque em + Nova venda."}
+              {q || de || ate || filtro !== "tudo" ? "Nenhuma venda encontrada." : "Ainda não há vendas. Toque em + Nova venda."}
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
